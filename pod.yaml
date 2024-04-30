@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qem-bot
+  labels:
+    app: qem-bot
+spec:
+  selector:
+    matchLabels:
+      app: qem-bot
+  template:
+    metadata:
+      labels:
+        app: qem-bot
+    spec:
+      containers:
+      - name: qam-ci-leap
+        image: registry.suse.de/qa/maintenance/containers/qam-ci-leap:latest
+        command:
+          - bash
+        args:
+          - -c
+          - "retry -r 30 -e -- git clone --verbose --progress --depth 1 https://github.com/openSUSE/qem-bot.git\n
+             ls -l /etc/openqabot\n
+             git -C qem-bot rev-parse HEAD\n
+             ./qem-bot/bot-ng.py -c /etc/openqabot --dry --token 1234 amqp\n
+            "
