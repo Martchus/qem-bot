@@ -1,8 +1,11 @@
 # Copyright SUSE LLC
 # SPDX-License-Identifier: MIT
 # Used configuration parameters, e.g. api url's
-QEM_DASHBOARD = "http://dashboard.qam.suse.de/"
+#QEM_DASHBOARD = "http://dashboard.qam.suse.de/"
+# FIXME: don't use production dashboard, make this configurable
+QEM_DASHBOARD = "http://127.0.0.1:3000/"
 SMELT = "https://smelt.suse.de/graphql"
+GITEA = "https://src.suse.de"
 OBS_URL = "https://api.suse.de"
 OBS_MAINT_PRJ = "SUSE:Maintenance"
 OBS_GROUP = "qam-openqa"
