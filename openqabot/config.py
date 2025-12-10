@@ -21,6 +21,7 @@ DOWNLOAD_MAINTENANCE = os.environ.get("DOWNLOAD_MAINTENANCE_BASE_URL", DOWNLOAD_
 AMQP_URL = os.environ.get("AMQP_URL", "amqps://suse:suse@rabbit.suse.de")
 OLDEST_APPROVAL_JOB_DAYS = 6
 DEPRIORITIZE_LIMIT = os.environ.get("QEM_BOT_DEPRIORITIZE_LIMIT", None)
+REPO_HASH_THROTTLE_MINUTES = os.environ.get("QEM_BOT_REPO_HASH_THROTTLE_MINUTES", None)
 
 # Url of the "main" openQA server, this is only used to decide if the dashboard database should be updated or not;
 # to change the openQA instance to talk to, use -i / --openqa-instance parameter

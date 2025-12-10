@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from logging import getLogger
 from typing import Any, NamedTuple
 
@@ -14,6 +15,7 @@ from openqabot.config import (
     GITEA,
     OBSOLETE_PARAMS,
     QEM_DASHBOARD,
+    REPO_HASH_THROTTLE_MINUTES,
     SMELT_URL,
 )
 from openqabot.errors import NoRepoFoundError
@@ -91,7 +93,7 @@ class Incidents(BaseConf):
         return chan.product, chan.version, chan.arch
 
     @staticmethod
-    def _is_scheduled_job(token: dict[str, str], inc: Incident, arch: str, ver: str, flavor: str) -> bool:
+    def _is_scheduled_job(token: dict[str, str], inc: Incident, arch: str, ver: str, flavor: str) -> bool:  # noqa: PLR0911
         jobs = {}
         try:
             url = f"{QEM_DASHBOARD}api/incident_settings/{inc.id}"
@@ -108,13 +110,23 @@ class Incidents(BaseConf):
         revs = inc.revisions_with_fallback(arch, ver)
         if not revs:
             return False
-        return any(
-            job["flavor"] == flavor
-            and job["arch"] == arch
-            and job["version"] == ver
-            and job["settings"]["REPOHASH"] == revs
-            for job in jobs
-        )
+        relevant_jobs = [
+            job for job in jobs if job["flavor"] == flavor and job["arch"] == arch and job["version"] == ver
+        ]
+        if any(job["settings"]["REPOHASH"] == revs for job in relevant_jobs):
+            return True
+        if REPO_HASH_THROTTLE_MINUTES is None:
+            return False
+        throttle_thresold = time.time() - float(REPO_HASH_THROTTLE_MINUTES) * 60.0
+        if any(job["settings"]["REPOHASH"] > throttle_thresold for job in relevant_jobs):
+            log.info(
+                "Present jobs for incident %s (arch '%s', flavor '%s') are new enough to consider the incident already scheduled (despite different REPO_HASH).",
+                inc.id,
+                arch,
+                ver,
+            )
+            return True
+        return False
 
     def _make_repo_url(self, inc: Incident, chan: Repos) -> str:
         return (
