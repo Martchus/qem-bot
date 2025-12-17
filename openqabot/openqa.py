@@ -31,7 +31,7 @@ class openQAInterface:
     def __init__(self, args: Namespace) -> None:
         self.url: ParseResult = args.openqa_instance
         self.openqa = OpenQA_Client(server=self.url.netloc, scheme=self.url.scheme)
-        self.retries = 0 if "PYTEST_VERSION" in os.environ else 3
+        self.retries = 3
         user_agent = {"User-Agent": "python-OpenQA_Client/qem-bot/1.0.0"}
         self.openqa.session.headers.update(user_agent)
         self.qem_token: dict[str, str] = {"Authorization": f"Token {args.token}"}

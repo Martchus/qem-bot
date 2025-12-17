@@ -82,7 +82,7 @@ def fake_no_jobs() -> None:
 
 def fake_openqa_responses_with_param_matching(additional_builds_json: dict) -> list[responses.Response]:
     list_of_params = []
-    base_params = {"distri": "sle", "version": "16.0", "build": "139.1"}
+    base_params = {"distri": "sle2", "version": "16.0", "build": "139.1"}
     json_by_arch = {"aarch64": {}, "x86_64": {}, "s390x": {}, "ppc64le": {}}
     for flavor in ("Online-Increments", "Foo-Increments"):
         for arch, json in json_by_arch.items():
@@ -352,8 +352,10 @@ def test_skipping_with_no_openqa_jobs_verifying_that_expected_scheduled_products
     caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
     fake_no_jobs_with_param_matching: list[responses.Response],
+    no_retry
 ) -> None:
     # configure increment approver with additional config to check whether scheduled products of all configs are considered
+    assert no_retry == 32
     increment_approver = prepare_approver_with_additional_config(caplog, monkeypatch)
     increment_approver()
     for resp in fake_no_jobs_with_param_matching:

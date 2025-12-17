@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -84,7 +83,7 @@ def merge_dicts(dict1: dict[Any, Any], dict2: dict[Any, Any]) -> dict[Any, Any]:
 def __retry(retries: int | None, backoff_factor: float) -> Session:
     adapter = HTTPAdapter(
         max_retries=Retry(
-            None if "PYTEST_VERSION" in os.environ else retries,
+            retries,
             backoff_factor=backoff_factor,
             status_forcelist=frozenset({403, 413, 429, 503}),
         ),
