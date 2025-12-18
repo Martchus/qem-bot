@@ -85,8 +85,10 @@ def fake_dashboard_replyback() -> None:
 @pytest.fixture
 def fake_repo() -> None:
     url = f"{OBS_DOWNLOAD_URL}/SUSE:/SLFO:/1.1.99:/PullRequest:/124:/SLES/standard/repo?jsontable"
+    url2 = f"{OBS_DOWNLOAD_URL}/SUSE:/SLFO:/1.1.99:/PullRequest:/124:/SL-Micro/standard/repo?jsontable"
     listing = Path("responses/test-product-repo.json").read_bytes()
     responses.add(GET, url, body=listing)
+    responses.add(GET, url2, body=listing)
 
 
 def fake_osc_http_get(url: str) -> etree.ElementTree:
@@ -94,6 +96,8 @@ def fake_osc_http_get(url: str) -> etree.ElementTree:
         return read_xml("build-results-124-SUSE:SLFO:1.1.99:PullRequest:124")
     if url == "https://api.suse.de/build/SUSE:SLFO:1.1.99:PullRequest:124:SLES/_result":
         return read_xml("build-results-124-SUSE:SLFO:1.1.99:PullRequest:124:SLES")
+    if url == "https://api.suse.de/build/SUSE:SLFO:1.1.99:PullRequest:124:SL-Micro/_result":
+        return read_xml("build-results-124-SUSE:SLFO:1.1.99:PullRequest:124:SL-Micro")
     raise AssertionError("Code tried to query unexpected OSC URL: " + url)  # pragma: no cover
 
 
@@ -115,7 +119,6 @@ def fake_osc_get_config(override_apiurl: str) -> None:
 
 
 def fake_get_multibuild_data(obs_project: str) -> str:
-    assert obs_project == "SUSE:SLFO:1.1.99:PullRequest:124:SLES"
     return read_utf8("_multibuild-124-" + obs_project + ".xml")
 
 
@@ -163,9 +166,11 @@ def test_gitea_sync_on_dry_run_does_not_sync(mocker: MockerFixture, caplog: pyte
 @responses.activate
 @pytest.mark.usefixtures("fake_gitea_api", "fake_dashboard_replyback")
 def test_sync_with_product_repo(mocker: MockerFixture, caplog: pytest.LogCaptureFixture) -> None:
+    mocker.patch("openqabot.loader.gitea.OBS_PRODUCTS", "SLES,SL-Micro")
     run_gitea_sync(mocker, caplog)
     messages = [x[-1] for x in caplog.record_tuples]
     expected_repo = "SUSE:SLFO:1.1.99:PullRequest:124:SLES"
+    expected_repo_2 = "SUSE:SLFO:1.1.99:PullRequest:124:SL-Micro"
     assert "Relevant archs for " + expected_repo + ": ['aarch64', 'x86_64']" in messages
     assert "Loaded 7 active PRs from products/SLFO" in messages
     assert "Fetching info for PR 131 from Gitea" in messages
@@ -181,6 +186,7 @@ def test_sync_with_product_repo(mocker: MockerFixture, caplog: pytest.LogCapture
         channel = "#".join([f"{expected_repo}:{arch}", "15.99"])
         assert channel in channels
         assert channel in failed_or_unpublished
+    assert f"{expected_repo_2}:aarch64#6.2" in channels
     assert incident["project"] == "SLFO"
     assert incident["url"] == "https://src.suse.de/products/SLFO/pulls/124"
     assert incident["inReview"]
